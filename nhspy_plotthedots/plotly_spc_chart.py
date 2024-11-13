@@ -66,6 +66,24 @@ def get_colour(row: pd.Series) -> str:
         return 'yellow'
     else:
         return 'rgb(22, 96, 167)'
+    
+# Define get_y_axis_range()
+# -------------------------------------------------------------------------
+def get_y_axis_range(y_axis_min: float,
+                     y_axis_max: float) -> list[float]:
+    """
+    This function calculates the y axis range based on values to plot
+    maximum and minimum values clamping at 0 where appropriate
+    
+    Parameters:
+    - y_axis_min (float): The plotting minimum value
+    - y_axis_max (float): The plotting maximum value
+    
+    Returns:
+    - A list with two floats to represent the range of the y axis
+    """
+    return [y_axis_min < 0 if y_axis_min - (y_axis_min * 0.1) else 0, 
+            y_axis_max > 0 if y_axis_max + (y_axis_max * 0.1) else 0]
 
 # Define plotly_spc_chart()
 # -------------------------------------------------------------------------
@@ -146,6 +164,7 @@ def plotly_spc_chart(df: pd.DataFrame,
     # Set options
     min_xaxis = min(df[date_col])
     max_xaxis = max(df[date_col])
+    min_yaxis = min(df[values_col])
     max_yaxis = max(df[values_col])
     remove = ['zoom2d','pan2d', 'select2d', 'lasso2d', 'zoomIn2d',
             'zoomOut2d', 'autoScale2d', 'resetScale2d', 'zoom',
@@ -153,15 +172,16 @@ def plotly_spc_chart(df: pd.DataFrame,
             'resetScale', 'toggleSpikelines', 'hoverClosestCartesian',
             'hoverCompareCartesian', 'toImage']
     # Set layout
+    # add more time to x-axis to show plot circles
+    xaxis_range = [min_xaxis - relativedelta(days=5),
+                    max_xaxis + relativedelta(days=5)]
+    # Calculate y axis
+    yaxis_range = get_y_axis_range(min_yaxis, max_yaxis)
+
     layout = go.Layout(title = plot_title,
                    font = dict(size = 12),
-                   xaxis = dict(title = x_lab,
-                                # add more time to x-axis to show plot circles
-                                range = [min_xaxis - relativedelta(days=5),
-                                         max_xaxis + relativedelta(days=5)]),
-                   yaxis = dict(title = y_lab,
-                                # fix y0 at 0 and add 10% to y1
-                                range = [0, max_yaxis + (max_yaxis * 0.1)]),
+                   xaxis = dict(title = x_lab, range = xaxis_range),
+                   yaxis = dict(title = y_lab, range = yaxis_range),
                    showlegend = False,
                    hovermode = "x unified")
     # Set configuration
